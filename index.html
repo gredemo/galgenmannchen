@@ -4,14 +4,341 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Galgenmännchen - Deutsches Vokabelspiel</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Georgia, serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #44403c 0%, #92400e 50%, #44403c 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .game-container {
+      background: linear-gradient(to bottom, #fef3c7 0%, #fef9e7 100%);
+      border: 8px solid #78350f;
+      border-radius: 10px;
+      box-shadow: 0 0 0 4px #78350f, 0 20px 60px rgba(0,0,0,0.8);
+      padding: 30px;
+      max-width: 1200px;
+      width: 100%;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 3em;
+      background: linear-gradient(to bottom, #b45309, #eab308, #b45309);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+      letter-spacing: 0.1em;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #78350f;
+      font-size: 1.1em;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+
+    .difficulty-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .difficulty-btn {
+      padding: 12px 30px;
+      font-size: 1.1em;
+      font-weight: bold;
+      font-family: Georgia, serif;
+      border: 4px solid #57534e;
+      border-radius: 8px;
+      background: linear-gradient(to bottom, #d6d3d1, #a8a29e);
+      color: #1c1917;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .difficulty-btn:hover {
+      transform: scale(1.05);
+      background: linear-gradient(to bottom, #a8a29e, #78716c);
+    }
+
+    .difficulty-btn.active {
+      background: linear-gradient(to bottom, #d97706, #92400e);
+      color: #fef3c7;
+      border-color: #78350f;
+      transform: scale(1.05);
+    }
+
+    .game-area {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 20px;
+    }
+
+    .hangman-section {
+      text-align: center;
+    }
+
+    .wrong-count {
+      display: inline-block;
+      padding: 10px 20px;
+      background: linear-gradient(to bottom, #991b1b, #7f1d1d);
+      border: 4px solid #450a0a;
+      border-radius: 8px;
+      color: #fef3c7;
+      font-size: 1.3em;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    .hangman-canvas {
+      background: linear-gradient(to bottom right, #fef3c7, #fde68a);
+      border: 4px solid #92400e;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .word-section {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .word-display {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+      min-height: 60px;
+    }
+
+    .letter-box {
+      width: 40px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2em;
+      font-weight: bold;
+      color: #78350f;
+      border-bottom: 4px solid #92400e;
+      transition: all 0.3s;
+    }
+
+    .letter-box.new {
+      color: #15803d;
+      animation: pop 0.3s ease-out;
+    }
+
+    @keyframes pop {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+
+    .status-message {
+      text-align: center;
+      margin-bottom: 20px;
+      padding: 15px;
+      border-radius: 10px;
+      border: 4px solid;
+      display: none;
+    }
+
+    .status-message.show {
+      display: block;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .status-message.won {
+      background: linear-gradient(to bottom, #15803d, #14532d);
+      border-color: #052e16;
+      color: #fef3c7;
+    }
+
+    .status-message.lost {
+      background: linear-gradient(to bottom, #1c1917, #000000);
+      border-color: #0c0a09;
+      color: #fef3c7;
+    }
+
+    .status-message h2 {
+      font-size: 2em;
+      margin-bottom: 5px;
+    }
+
+    .status-word {
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #fde047;
+    }
+
+    .status-definition {
+      font-size: 0.9em;
+      font-style: italic;
+      color: #fef3c7;
+      margin-top: 5px;
+    }
+
+    .keyboard {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .key {
+      width: 36px;
+      height: 36px;
+      font-size: 0.9em;
+      font-weight: bold;
+      font-family: Georgia, serif;
+      border: 2px solid #92400e;
+      border-radius: 6px;
+      background: linear-gradient(to bottom, #d97706, #92400e);
+      color: #fef9e7;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }
+
+    .key:hover:not(:disabled) {
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .key:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .key.correct {
+      background: linear-gradient(to bottom, #16a34a, #15803d);
+      border-color: #14532d;
+      transform: scale(0.95);
+    }
+
+    .key.wrong {
+      background: linear-gradient(to bottom, #b91c1c, #7f1d1d);
+      border-color: #450a0a;
+      transform: scale(0.95) rotate(12deg);
+    }
+
+    .new-game-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin: 0 auto;
+      padding: 12px 30px;
+      font-size: 1.1em;
+      font-weight: bold;
+      font-family: Georgia, serif;
+      border: 4px solid #78350f;
+      border-radius: 8px;
+      background: linear-gradient(to bottom, #d97706, #92400e);
+      color: #fef9e7;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .new-game-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    }
+
+    @media (max-width: 768px) {
+      .game-area {
+        grid-template-columns: 1fr;
+      }
+      
+      h1 {
+        font-size: 2em;
+      }
+      
+      .difficulty-buttons {
+        flex-wrap: wrap;
+      }
+    }
+  </style>
 </head>
 <body>
-  <div id="root"></div>
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-  <script type="text/babel" src="game.js"></script>
+  <div class="game-container">
+    <h1>⚔ GALGENMÄNNCHEN ⚔</h1>
+    <p class="subtitle">Errate das Wort, bevor der Galgen deine Seele fordert!</p>
+    
+    <div class="difficulty-buttons">
+      <button class="difficulty-btn" data-difficulty="Leicht">Leicht</button>
+      <button class="difficulty-btn active" data-difficulty="Mittel">Mittel</button>
+      <button class="difficulty-btn" data-difficulty="Schwer">Schwer</button>
+    </div>
+
+    <div class="game-area">
+      <div class="hangman-section">
+        <div class="wrong-count">Falsch: <span id="wrongCount">0</span>/10</div>
+        <div class="hangman-canvas">
+          <svg width="200" height="250" id="hangmanSvg">
+            <!-- Gallows -->
+            <line x1="20" y1="230" x2="180" y2="230" stroke="#000000" stroke-width="4" />
+            <line x1="50" y1="230" x2="50" y2="20" stroke="#000000" stroke-width="4" />
+            <line x1="50" y1="20" x2="130" y2="20" stroke="#000000" stroke-width="4" />
+            <line x1="130" y1="20" x2="130" y2="50" stroke="#000000" stroke-width="4" />
+            
+            <!-- Body parts (hidden initially) -->
+            <circle id="head" cx="130" cy="70" r="20" stroke="#FF6B6B" stroke-width="4" fill="#FFE5E5" style="display:none" />
+            <line id="body" x1="130" y1="90" x2="130" y2="150" stroke="#FF6B6B" stroke-width="4" style="display:none" />
+            <line id="leftArm" x1="130" y1="110" x2="100" y2="130" stroke="#FF6B6B" stroke-width="4" style="display:none" />
+            <line id="rightArm" x1="130" y1="110" x2="160" y2="130" stroke="#FF6B6B" stroke-width="4" style="display:none" />
+            <line id="leftLeg" x1="130" y1="150" x2="110" y2="190" stroke="#FF6B6B" stroke-width="4" style="display:none" />
+            <line id="rightLeg" x1="130" y1="150" x2="150" y2="190" stroke="#FF6B6B" stroke-width="4" style="display:none" />
+            <circle id="leftEye" cx="122" cy="67" r="3" fill="#333" style="display:none" />
+            <circle id="rightEye" cx="138" cy="67" r="3" fill="#333" style="display:none" />
+            <path id="frown" d="M 120 78 Q 130 75 140 78" stroke="#333" stroke-width="2" fill="none" style="display:none" />
+            <g id="deadEyes" style="display:none">
+              <line x1="118" y1="64" x2="126" y2="70" stroke="#DC2626" stroke-width="3" />
+              <line x1="126" y1="64" x2="118" y2="70" stroke="#DC2626" stroke-width="3" />
+              <line x1="134" y1="64" x2="142" y2="70" stroke="#DC2626" stroke-width="3" />
+              <line x1="142" y1="64" x2="134" y2="70" stroke="#DC2626" stroke-width="3" />
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <div class="word-section">
+        <div class="word-display" id="wordDisplay"></div>
+        
+        <div class="status-message" id="statusMessage"></div>
+        
+        <div class="keyboard" id="keyboard"></div>
+        
+        <button class="new-game-btn" onclick="startNewGame()">
+          <span>🔄</span> Neue Quest
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
 </body>
 </html>
